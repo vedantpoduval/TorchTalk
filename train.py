@@ -2,6 +2,7 @@ import json
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset,DataLoader
+from model import NeuralNet
 import numpy as np
 from preprocessing import tokenize,stem,bag_of_words
 with open('data.json','r') as f:
@@ -16,7 +17,7 @@ for dat in data['data']:
     tags.append(tag)
     for pattern in dat['patterns']:
         w = tokenize(pattern)
-        all_words.extend(w)
+        all_words.extend(w)  # We use extend to avoid puttting arrays of arrays.
         xy.append((w,tag))
 
 ignore = ["?",".","!",","]
@@ -45,5 +46,31 @@ class ChatDataset(Dataset):
         return self.x_data[index],self.y_data[index]
 
 batch_size = 8 
+input_size = len(all_words)
+output_size = len(tags)
+hidden_size = 8
+learning_rate = 1e-2
+num_epochs = 1000
 dataset = ChatDataset()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 train_data = DataLoader(dataset=dataset,batch_size=batch_size,shuffle=True)
+model = NeuralNet(input_size,hidden_size,output_size).to(device)
+
+cross_entropy = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(),lr = learning_rate) 
+
+for epoch in range(num_epochs):
+    for x,y in train_data:
+        x = x.to(device)
+        y = y.to(device)
+        
+        output = model(x)
+        loss = cross_entropy(output,y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    if (epoch+1) % 100 == 0:
+        print(f'epoch {epoch + 1}/{num_epochs}, loss = {loss.item():.4f}')
+
+print(f'final loss = {loss.item():.4f}')
+        
