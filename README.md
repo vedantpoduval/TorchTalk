@@ -1,4 +1,3 @@
-Here's a description you can use for your GitHub repository containing your PyTorch chatbot named Torch Talk with a GUI:
 
 **Torch Talk: A PyTorch Chatbot with GUI**
 
